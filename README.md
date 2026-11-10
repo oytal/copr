@@ -2,7 +2,7 @@
 
 RPM packaging for [Fedora COPR](https://copr.fedorainfracloud.org). Each
 directory is one package, and each package has its own COPR project
-`oytal/<package>`, built for Fedora 44 and 45 (x86_64 + aarch64).
+`oytal/<package>`, built for Fedora 44, 45 and rawhide (x86_64 + aarch64).
 
 | Package | Upstream | Install |
 |---|---|---|
@@ -37,13 +37,28 @@ copr-setup.sh       one-time COPR project setup for a package
    type `application/json`, push events only). Every COPR project needs its
    own webhook here.
 
-## Adding a Fedora release
+## Fedora releases
+
+Projects are created with rawhide chroots and `--follow-fedora-branching on`,
+so when Fedora branches a new release from rawhide, COPR creates its chroots
+automatically as forks of the rawhide chroots, built packages included. To
+rebuild against the new release anyway:
 
 ```sh
-copr-cli modify <pkg> --chroot fedora-45-x86_64 --chroot fedora-45-aarch64 \
-  --chroot fedora-46-x86_64 --chroot fedora-46-aarch64
 copr-cli build-package <pkg> --name <pkg>
 ```
+
+To drop an EOL release (`--chroot` replaces the whole list):
+
+```sh
+copr-cli modify <pkg> \
+  --chroot fedora-45-x86_64 --chroot fedora-45-aarch64 \
+  --chroot fedora-46-x86_64 --chroot fedora-46-aarch64 \
+  --chroot fedora-rawhide-x86_64 --chroot fedora-rawhide-aarch64
+```
+
+Rawhide builds fail now and then when rawhide itself is broken. That does
+not affect the stable release repos.
 
 ## Local test build
 

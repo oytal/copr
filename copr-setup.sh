@@ -6,7 +6,8 @@ set -euo pipefail
 
 PKG=${1:?usage: $0 <package-dir>}
 CLONE_URL=${CLONE_URL:-https://github.com/oytal/copr.git}
-CHROOTS=${CHROOTS:-fedora-44-x86_64 fedora-44-aarch64 fedora-45-x86_64 fedora-45-aarch64}
+# Rawhide + --follow-fedora-branching: COPR adds new fedora-N chroots itself
+CHROOTS=${CHROOTS:-fedora-44-x86_64 fedora-44-aarch64 fedora-45-x86_64 fedora-45-aarch64 fedora-rawhide-x86_64 fedora-rawhide-aarch64}
 
 cd "$(dirname "$0")"
 [ -f "$PKG/$PKG.spec" ] || { echo "missing $PKG/$PKG.spec" >&2; exit 1; }
@@ -19,6 +20,7 @@ for c in $CHROOTS; do chroot_args+=(--chroot "$c"); done
 
 copr-cli create "$PKG" "${chroot_args[@]}" \
   --enable-net "$ENABLE_NET" \
+  --follow-fedora-branching on \
   --description "$PKG: ${summary:-$PKG}. Packaging: ${CLONE_URL%.git}/tree/main/$PKG" \
   --instructions "sudo dnf copr enable oytal/$PKG && sudo dnf install $PKG"
 
