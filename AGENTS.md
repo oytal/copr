@@ -13,7 +13,7 @@ To add a new package, follow `.claude/skills/add-package/SKILL.md` step by step.
 templates/              go.spec, rust.spec, package.env.example to start from
 test-build.sh           ./test-build.sh <pkg> [44 45 rawhide]: local build in podman
 copr-setup.sh           ./copr-setup.sh <pkg>: one-time COPR project creation
-.github/workflows/bump.yml   every 6h bumps specs to upstream's latest release
+.github/workflows/bump.yml   hourly bumps specs to upstream's latest release
 ```
 
 ## Spec conventions

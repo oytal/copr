@@ -26,7 +26,7 @@ covers research, spec, test builds and the manual steps left for you.
 
 ## Automatic builds
 
-1. `bump.yml` runs every 6 hours. For each `*/package.env` it compares the
+1. `bump.yml` runs every hour. For each `*/package.env` it compares the
    spec version with the latest stable GitHub release of `UPSTREAM`, bumps
    the spec (new version, release 1, changelog entry) and commits.
 2. The push fires each COPR project's webhook. COPR rebuilds a package only
