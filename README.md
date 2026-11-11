@@ -19,6 +19,7 @@ A few packages also have a project of their own (`STANDALONE=yes` in
 | herdr-app | [herdrdev/herdr-app](https://github.com/herdrdev/herdr-app) | |
 | herdr-core | [herdrdev/herdr-core](https://github.com/herdrdev/herdr-core) | |
 | kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | |
+| openlogi | [AprilNEA/OpenLogi](https://github.com/AprilNEA/OpenLogi) | |
 
 ## Layout
 
@@ -103,4 +104,7 @@ not affect the stable release repos.
 ```
 
 RPMs, the build log and rpmlint output end up in `<pkg>/.build/<release>/`
-(git-ignored).
+(git-ignored). The build itself runs in `/var/tmp/copr-test-build`
+(`BUILD_ROOT=` to move it), which is removed afterwards. Large Rust GUI
+builds (gpui: herdr-app, openlogi) need a lot of memory; limit parallel
+jobs with `CARGO_BUILD_JOBS=2 ./test-build.sh openlogi`.

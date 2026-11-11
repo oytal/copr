@@ -11,12 +11,21 @@ RELEASES=${*:-44}
 cd "$(dirname "$0")"
 [ -f "$PKG/$PKG.spec" ] || { echo "missing $PKG/$PKG.spec" >&2; exit 1; }
 
+# rpmbuild's BUILD dir (Rust target dirs reach many GB) goes to a host
+# directory instead of the container's storage; set BUILD_ROOT to move it.
+BUILD_ROOT=${BUILD_ROOT:-/var/tmp/copr-test-build}
+# CARGO_BUILD_JOBS=2 ./test-build.sh <pkg> limits parallel rustc jobs (memory)
+jobs_env=()
+[ -n "${CARGO_BUILD_JOBS:-}" ] && jobs_env=(-e CARGO_BUILD_JOBS)
+
 for rel in $RELEASES; do
   out="$PWD/$PKG/.build/$rel"
-  mkdir -p "$out"
+  work="$BUILD_ROOT/$PKG-$rel"
+  rm -rf "$work"
+  mkdir -p "$out" "$work"
   echo "==> $PKG on fedora:$rel (log: $out/build.log)"
-  if ! podman run --rm -e PKG="$PKG" \
-      -v "$PWD/$PKG:/src:Z,ro" -v "$out:/out:Z" \
+  if ! podman run --rm -e PKG="$PKG" "${jobs_env[@]}" \
+      -v "$PWD/$PKG:/src:Z,ro" -v "$out:/out:Z" -v "$work:/root/rpmbuild/BUILD:Z" \
       "registry.fedoraproject.org/fedora:$rel" bash -euc '
         dnf -y -q install rpm-build rpmdevtools dnf-plugins-core rpmlint >/dev/null 2>&1
         rpmdev-setuptree
@@ -33,8 +42,10 @@ for rel in $RELEASES; do
       ' > "$out/build.log" 2>&1; then
     echo "FAILED on fedora:$rel, last lines of $out/build.log:" >&2
     tail -30 "$out/build.log" >&2
+    podman unshare rm -rf "$work"
     exit 1
   fi
+  podman unshare rm -rf "$work"
   sed -n '/^--- files/,$p' "$out/build.log"
   echo "--- rpmlint: $(tail -1 "$out/rpmlint.txt")"
 done
