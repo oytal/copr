@@ -9,7 +9,9 @@ To add a new package, follow `.claude/skills/add-package/SKILL.md` step by step.
 
 ```
 <pkg>/<pkg>.spec        spec file; directory name = spec name = RPM Name = COPR project
-<pkg>/package.env       UPSTREAM=owner/repo, TAG_PREFIX=v, ENABLE_NET=on|off
+                        (unless package.env sets COPR_PROJECT)
+<pkg>/package.env       UPSTREAM=owner/repo, TAG_PREFIX=v, ENABLE_NET=on|off,
+                        optional TRACK=tags, COPR_PROJECT=<pkg>
 templates/              go.spec, rust.spec, package.env.example to start from
 test-build.sh           ./test-build.sh <pkg> [44 45 rawhide]: local build in podman
 copr-setup.sh           ./copr-setup.sh <pkg>: one-time COPR project creation
@@ -24,9 +26,17 @@ copr-setup.sh           ./copr-setup.sh <pkg>: one-time COPR project creation
 - `Version:` is the upstream tag minus `TAG_PREFIX`. `Release: 1%{?dist}`.
   The tag prefix in the Source0 URL (`refs/tags/v%{version}`) must match
   `TAG_PREFIX` in `package.env`; change both together.
-- Automatic bumps only track GitHub *releases* (not bare tags, not
-  prereleases). For upstreams without releases leave `UPSTREAM=` empty and
-  bump by hand.
+- Automatic bumps track GitHub *releases* (not prereleases). For upstreams
+  that only push version tags set `TRACK=tags` (newest `TAG_PREFIX<x.y.z>`
+  tag; tags with a `-` suffix are skipped). For upstreams with neither,
+  leave `UPSTREAM=` empty and bump by hand.
+- Several packages can share one COPR project: each keeps its own
+  `<pkg>/` directory and spec, and members set `COPR_PROJECT=<main pkg>` in
+  `package.env` (example: herdr, herdr-core, herdr-app in `oytal/herdr`).
+  `./copr-setup.sh <main pkg>` sets up all of them.
+- Upstreams with git submodules: GitHub tarballs leave them out. Fetch the
+  pinned commit in `%prep` (see `herdr-core/herdr-core.spec`), not with a
+  hardcoded commit in the spec.
 - The COPR project description links to upstream: `https://github.com/$UPSTREAM`,
   or the spec's `URL:` when `UPSTREAM` is empty. In that case write `URL:`
   without macros so the link resolves. After changing either, the owner

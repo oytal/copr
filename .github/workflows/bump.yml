@@ -30,10 +30,18 @@ jobs:
             spec="$pkg/$pkg.spec"
             UPSTREAM=
             TAG_PREFIX=v
+            TRACK=releases
             . "./$envfile"
             [ -n "$UPSTREAM" ] || { echo "$pkg: no UPSTREAM, skipping"; continue; }
-            latest=$(curl -fsSL ${GH_TOKEN:+-H "Authorization: Bearer $GH_TOKEN"} \
-              "https://api.github.com/repos/$UPSTREAM/releases/latest" | jq -r .tag_name) || true
+            if [ "$TRACK" = tags ]; then
+              # Upstream tags without GitHub releases: newest TAG_PREFIX<digits.dots> tag
+              latest=$(git ls-remote --tags --refs "https://github.com/$UPSTREAM" \
+                | sed -n "s|.*refs/tags/${TAG_PREFIX}||p" \
+                | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tail -1) || true
+            else
+              latest=$(curl -fsSL ${GH_TOKEN:+-H "Authorization: Bearer $GH_TOKEN"} \
+                "https://api.github.com/repos/$UPSTREAM/releases/latest" | jq -r .tag_name) || true
+            fi
             latest=${latest#"$TAG_PREFIX"}
             current=$(rpmspec -q --qf '%{version}\n' --srpm "$spec")
             echo "$pkg: current=$current latest=$latest"
