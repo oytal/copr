@@ -28,7 +28,8 @@ TODO a few sentences.
 
 %build
 export CARGO_HOME=%{_builddir}/cargo
-export RUSTFLAGS="%{build_rustflags}"
+# Fedora sets -Cstrip=none (for debuginfo); strip here since debuginfo is off
+export RUSTFLAGS="%{build_rustflags} -Cstrip=symbols"
 # Drop --locked if upstream does not commit Cargo.lock
 cargo build --release --locked
 

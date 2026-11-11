@@ -75,8 +75,9 @@ inside a `registry.fedoraproject.org/fedora:<rel>` container (or just
 ## Rules for agents
 
 - A package is done only when `./test-build.sh <pkg> 44 45 rawhide` passes.
-  Read `<pkg>/.build/<rel>/rpmlint.txt` and fix real errors (warnings about
-  missing manpages and the like are fine).
+  Read `<pkg>/.build/<rel>/rpmlint.txt` and fix real errors. Fine to ignore:
+  missing manpages, and `spelling-error` on tool/project names (it reports
+  those as E: on some releases).
 - Do not commit or push. The owner signs commits and pushes themselves.
 - Do not run `copr-setup.sh` or other `copr-cli` commands that change
   anything unless the owner asks. They create public projects.

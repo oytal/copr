@@ -7,6 +7,7 @@ directory is one package, and each package has its own COPR project
 | Package | Upstream | Install |
 |---|---|---|
 | cliamp | [bjarneo/cliamp](https://github.com/bjarneo/cliamp) | `sudo dnf copr enable oytal/cliamp && sudo dnf install cliamp` |
+| kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | `sudo dnf copr enable oytal/kubie && sudo dnf install kubie` |
 
 ## Layout
 
