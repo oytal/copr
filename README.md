@@ -12,10 +12,17 @@ directory is one package, and each package has its own COPR project
 
 ```
 <pkg>/<pkg>.spec    the spec file
-<pkg>/package.env   UPSTREAM=<owner/repo> to track, ENABLE_NET=on|off
+<pkg>/package.env   UPSTREAM=<owner/repo> to track, TAG_PREFIX, ENABLE_NET=on|off
+templates/          starter specs (Go, Rust) and package.env.example
+test-build.sh       local build in Fedora containers
 copr-setup.sh       one-time COPR project setup for a package
+AGENTS.md           conventions for coding agents (CLAUDE.md imports it)
+.claude/skills/add-package/SKILL.md   step-by-step "package a new app"
 .github/workflows/bump.yml
 ```
+
+Agents: ask for "add <github url> as a new package". The add-package skill
+covers research, spec, test builds and the manual steps left for you.
 
 ## Automatic builds
 
@@ -27,15 +34,23 @@ copr-setup.sh       one-time COPR project setup for a package
 
 ## Adding a package
 
-1. Create `<pkg>/<pkg>.spec` and `<pkg>/package.env`. Source0 must be a URL,
-   because COPR downloads it with spectool.
-2. Test it locally (below), commit and push.
+1. Create `<pkg>/<pkg>.spec` and `<pkg>/package.env`, starting from
+   `templates/`. Source0 must be a URL, because COPR downloads it with
+   spectool.
+2. Test it with `./test-build.sh <pkg> 44 45 rawhide`, then commit and push.
 3. Run `./copr-setup.sh <pkg>` (needs `~/.config/copr` from
    <https://copr.fedorainfracloud.org/api/>).
 4. In COPR open `oytal/<pkg>` → Settings → Integrations, copy the GitHub
    webhook URL and add it in this repo under Settings → Webhooks (content
    type `application/json`, push events only). Every COPR project needs its
    own webhook here.
+
+To refresh an existing project's description (summary, upstream and
+packaging links) after changing the spec or `package.env`:
+
+```sh
+./copr-setup.sh <pkg> --update-description
+```
 
 ## Fedora releases
 
@@ -63,10 +78,9 @@ not affect the stable release repos.
 ## Local test build
 
 ```sh
-pkg=cliamp
-podman run --rm -v $PWD/$pkg:/src:Z,ro registry.fedoraproject.org/fedora:44 bash -c "
-  dnf -y install rpm-build rpmdevtools dnf-plugins-core &&
-  rpmdev-setuptree && cp /src/$pkg.spec ~/rpmbuild/SPECS/ &&
-  cd ~/rpmbuild/SPECS && spectool -g -R $pkg.spec &&
-  dnf -y builddep $pkg.spec && rpmbuild -ba $pkg.spec"
+./test-build.sh cliamp                  # Fedora 44
+./test-build.sh cliamp 44 45 rawhide    # all targets
 ```
+
+RPMs, the build log and rpmlint output end up in `<pkg>/.build/<release>/`
+(git-ignored).

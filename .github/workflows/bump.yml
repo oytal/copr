@@ -29,11 +29,12 @@ jobs:
             pkg=$(dirname "$envfile")
             spec="$pkg/$pkg.spec"
             UPSTREAM=
+            TAG_PREFIX=v
             . "./$envfile"
             [ -n "$UPSTREAM" ] || { echo "$pkg: no UPSTREAM, skipping"; continue; }
             latest=$(curl -fsSL ${GH_TOKEN:+-H "Authorization: Bearer $GH_TOKEN"} \
               "https://api.github.com/repos/$UPSTREAM/releases/latest" | jq -r .tag_name) || true
-            latest=${latest#v}
+            latest=${latest#"$TAG_PREFIX"}
             current=$(rpmspec -q --qf '%{version}\n' --srpm "$spec")
             echo "$pkg: current=$current latest=$latest"
             case "$latest" in ""|null|*-*) continue;; esac
