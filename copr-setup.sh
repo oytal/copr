@@ -1,32 +1,108 @@
 #!/usr/bin/env bash
-# One-time setup of the COPR project for one package: ./copr-setup.sh <pkg>
-# Refresh description/instructions of an existing project:
-#   ./copr-setup.sh <pkg> --update-description
-# Creates the COPR project oytal/<pkg> that builds from <pkg>/ in this repo.
+# Puts packages from this repo on COPR. Safe to re-run.
+#   ./copr-setup.sh <pkg>...                  add/update <pkg> in oytal/oytal and build it
+#   ./copr-setup.sh --all                     the same for every package
+#   ./copr-setup.sh --update-description      refresh project descriptions only
 #
-# Several packages can share one project: a package whose package.env sets
-# COPR_PROJECT=<pkg> is a member of <pkg>'s project. Setting up <pkg> also
-# adds and builds its members. ./copr-setup.sh <member> adds just that
-# member to the existing project.
+# Every package builds in one shared project, oytal/$MAIN. A package whose
+# package.env sets STANDALONE=yes also gets a project of its own, oytal/<pkg>,
+# for people who want just that app. The first run creates the projects.
 # Needs ~/.config/copr from https://copr.fedorainfracloud.org/api/
 set -euo pipefail
 
-PKG=${1:?usage: $0 <package-dir> [--update-description]}
+MAIN=${MAIN:-oytal}
+OWNER=${OWNER:-oytal}
 CLONE_URL=${CLONE_URL:-https://github.com/oytal/copr.git}
+REPO_URL=${CLONE_URL%.git}
 # Rawhide + --follow-fedora-branching: COPR adds new fedora-N chroots itself
 CHROOTS=${CHROOTS:-fedora-44-x86_64 fedora-44-aarch64 fedora-45-x86_64 fedora-45-aarch64 fedora-rawhide-x86_64 fedora-rawhide-aarch64}
 
 cd "$(dirname "$0")"
-[ -f "$PKG/$PKG.spec" ] || { echo "missing $PKG/$PKG.spec" >&2; exit 1; }
 
-# Reads <pkg>/package.env in a subshell and prints one variable
-env_var() {
-  (ENABLE_NET=off UPSTREAM= COPR_PROJECT=; [ -f "$1/package.env" ] && . "./$1/package.env"; eval "echo \"\${$2}\"")
+all_packages() {
+  for envfile in */package.env; do dirname "$envfile"; done
 }
 
-# Adds <pkg> to <project> as an SCM package and starts its first build
+# Prints one variable of <pkg>/package.env
+env_var() {
+  (ENABLE_NET=off UPSTREAM= STANDALONE=; . "./$1/package.env"; eval "echo \"\${$2}\"")
+}
+
+summary() { sed -n 's/^Summary:[[:space:]]*//p' "$1/$1.spec" | head -1; }
+
+# Upstream URL: GitHub repo from package.env, else the spec URL if it has no macros
+upstream_url() {
+  local up
+  up=$(env_var "$1" UPSTREAM)
+  if [ -n "$up" ]; then echo "https://github.com/$up"
+  else sed -n 's/^URL:[[:space:]]*//p' "$1/$1.spec" | grep -v '%' | head -1 || true
+  fi
+}
+
+project_exists() { copr-cli list "$OWNER" 2>/dev/null | grep -qx "Name: $1"; }
+
+# Description and install line of the shared project: every package
+main_description() {
+  local p url
+  echo "Apps packaged by $OWNER for Fedora. Enable once, then install any of them."
+  echo
+  for p in $(all_packages); do
+    url=$(upstream_url "$p")
+    echo "- **$p**: $(summary "$p").${url:+ [Upstream]($url).} [Packaging]($REPO_URL/tree/main/$p)"
+  done
+}
+main_instructions() { echo "sudo dnf copr enable $OWNER/$MAIN && sudo dnf install <package>"; }
+
+# Description and install line of a standalone project
+pkg_description() {
+  local url
+  url=$(upstream_url "$1")
+  echo "$1: $(summary "$1")."
+  [ -z "$url" ] || printf '\nUpstream: [%s](%s)\n' "$url" "$url"
+  printf '\nPackaging: [%s](%s)\n' "$REPO_URL/tree/main/$1" "$REPO_URL/tree/main/$1"
+  printf '\nAlso in %s/%s with the other apps from %s.\n' "$OWNER" "$MAIN" "$REPO_URL"
+}
+pkg_instructions() { echo "sudo dnf copr enable $OWNER/$1 && sudo dnf install $1"; }
+
+# create_or_modify <project> <description> <instructions> <enable-net>
+create_or_modify() {
+  if project_exists "$1"; then
+    copr-cli modify "$1" --description "$2" --instructions "$3" --enable-net "$4"
+  else
+    local chroot_args=() c
+    for c in $CHROOTS; do chroot_args+=(--chroot "$c"); done
+    copr-cli create "$1" "${chroot_args[@]}" \
+      --enable-net "$4" \
+      --follow-fedora-branching on \
+      --description "$2" \
+      --instructions "$3"
+    echo "Created $OWNER/$1. Add its webhook: COPR → Settings → Integrations → GitHub URL," \
+      "then $REPO_URL → Settings → Webhooks (application/json, push events)." >&2
+  fi
+}
+
+# The shared project needs network if any package downloads at build time
+main_net() {
+  local p
+  for p in $(all_packages); do [ "$(env_var "$p" ENABLE_NET)" = on ] && { echo on; return; }; done
+  echo off
+}
+
+update_descriptions() {
+  local p
+  create_or_modify "$MAIN" "$(main_description)" "$(main_instructions)" "$(main_net)"
+  for p in $(all_packages); do
+    [ "$(env_var "$p" STANDALONE)" = yes ] && project_exists "$p" &&
+      copr-cli modify "$p" --description "$(pkg_description "$p")" --instructions "$(pkg_instructions "$p")"
+  done
+  return 0
+}
+
+# add_package <pkg> <project>: add (or update) the SCM package, then build it
 add_package() {
-  copr-cli add-package-scm "$2" \
+  local cmd=add-package-scm
+  copr-cli get-package "$OWNER/$2" --name "$1" >/dev/null 2>&1 && cmd=edit-package-scm
+  copr-cli "$cmd" "$2" \
     --name "$1" \
     --clone-url "$CLONE_URL" \
     --commit main \
@@ -35,71 +111,24 @@ add_package() {
     --type git \
     --method rpkg \
     --webhook-rebuild on
-  copr-cli build-package "$2" --name "$1"
+  copr-cli build-package "$2" --name "$1" --nowait
 }
 
-PROJECT=$(env_var "$PKG" COPR_PROJECT)
-if [ -n "$PROJECT" ] && [ "$PROJECT" != "$PKG" ]; then
-  [ "${2:-}" != --update-description ] || { echo "$PKG is in project $PROJECT: run $0 $PROJECT --update-description" >&2; exit 1; }
-  add_package "$PKG" "$PROJECT"
-  exit
-fi
-
-# Packages that share this project
-members=()
-for envfile in */package.env; do
-  m=$(dirname "$envfile")
-  [ "$m" != "$PKG" ] && [ "$(env_var "$m" COPR_PROJECT)" = "$PKG" ] && members+=("$m")
+case "${1:-}" in
+  "") echo "usage: $0 <pkg>... | --all | --update-description" >&2; exit 1 ;;
+  --update-description) update_descriptions; exit ;;
+  --all) set -- $(all_packages) ;;
+esac
+for p in "$@"; do
+  [ -f "$p/$p.spec" ] && [ -f "$p/package.env" ] || { echo "missing $p/$p.spec or $p/package.env" >&2; exit 1; }
 done
 
-upstream_link() {
-  local up url
-  up=$(env_var "$1" UPSTREAM)
-  # Upstream link: GitHub repo from package.env, else the spec URL if it has no macros
-  if [ -n "$up" ]; then
-    url="https://github.com/$up"
-  else
-    url=$(sed -n 's/^URL:[[:space:]]*//p' "$1/$1.spec" | grep -v '%' | head -1 || true)
+# Shared project first (its description lists every package)
+update_descriptions
+for p in "$@"; do
+  add_package "$p" "$MAIN"
+  if [ "$(env_var "$p" STANDALONE)" = yes ]; then
+    create_or_modify "$p" "$(pkg_description "$p")" "$(pkg_instructions "$p")" "$(env_var "$p" ENABLE_NET)"
+    add_package "$p" "$p"
   fi
-  [ -z "$url" ] || echo "[$url]($url)"
-}
-
-summary=$(sed -n 's/^Summary:[[:space:]]*//p' "$PKG/$PKG.spec" | head -1)
-description="$PKG: ${summary:-$PKG}."
-if [ ${#members[@]} -eq 0 ]; then
-  link=$(upstream_link "$PKG")
-  [ -n "$link" ] && description+=$'\n\n'"Upstream: $link"
-  description+=$'\n\n'"Packaging: [${CLONE_URL%.git}/tree/main/$PKG](${CLONE_URL%.git}/tree/main/$PKG)"
-else
-  description+=$'\n\n'"Packages:"
-  for p in "$PKG" "${members[@]}"; do
-    s=$(sed -n 's/^Summary:[[:space:]]*//p' "$p/$p.spec" | head -1)
-    link=$(upstream_link "$p")
-    description+=$'\n'"- **$p**: $s.${link:+ Upstream: $link.} Packaging: [$p](${CLONE_URL%.git}/tree/main/$p)"
-  done
-fi
-instructions="sudo dnf copr enable oytal/$PKG && sudo dnf install $PKG${members[*]:+ ${members[*]}}"
-
-if [ "${2:-}" = --update-description ]; then
-  copr-cli modify "$PKG" --description "$description" --instructions "$instructions"
-  exit
-fi
-
-# Any package of the project that downloads at build time needs network
-net=off
-for p in "$PKG" "${members[@]}"; do
-  [ "$(env_var "$p" ENABLE_NET)" = on ] && net=on
-done
-
-chroot_args=()
-for c in $CHROOTS; do chroot_args+=(--chroot "$c"); done
-
-copr-cli create "$PKG" "${chroot_args[@]}" \
-  --enable-net "$net" \
-  --follow-fedora-branching on \
-  --description "$description" \
-  --instructions "$instructions"
-
-for p in "$PKG" "${members[@]}"; do
-  add_package "$p" "$PKG"
 done

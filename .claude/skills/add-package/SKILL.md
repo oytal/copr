@@ -73,7 +73,9 @@ there and nothing unexpected is linked.
 - Do not commit, push, or run `copr-setup.sh`.
 - Report the test results and give the owner the manual steps:
   1. `git add <pkg> README.md && git commit -m "Add <pkg>" && git push`
-  2. `./copr-setup.sh <pkg>` (creates the public COPR project `oytal/<pkg>` and starts the first build)
-  3. COPR `oytal/<pkg>` → Settings → Integrations: copy the GitHub webhook
+  2. `./copr-setup.sh <pkg>` (adds it to the public COPR project
+     `oytal/oytal` and starts the first build)
+  3. Only if the package has `STANDALONE=yes` (a new project `oytal/<pkg>`):
+     COPR `oytal/<pkg>` → Settings → Integrations: copy the GitHub webhook
      URL and add it at github.com/oytal/copr → Settings → Webhooks
      (`application/json`, push events only).

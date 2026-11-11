@@ -1,20 +1,20 @@
 # AGENTS.md
 
-RPM packaging for Fedora COPR. One directory per package, one COPR project
-per package (`oytal/<pkg>`), all built from this repo (`github.com/oytal/copr`).
+RPM packaging for Fedora COPR. One directory per package, built from this
+repo (`github.com/oytal/copr`). Every package is in the shared COPR project
+`oytal/oytal`; packages with `STANDALONE=yes` also have their own `oytal/<pkg>`.
 
 To add a new package, follow `.claude/skills/add-package/SKILL.md` step by step.
 
 ## Layout
 
 ```
-<pkg>/<pkg>.spec        spec file; directory name = spec name = RPM Name = COPR project
-                        (unless package.env sets COPR_PROJECT)
+<pkg>/<pkg>.spec        spec file; directory name = spec name = RPM Name
 <pkg>/package.env       UPSTREAM=owner/repo, TAG_PREFIX=v, ENABLE_NET=on|off,
-                        optional TRACK=tags, COPR_PROJECT=<pkg>
+                        optional TRACK=tags, STANDALONE=yes
 templates/              go.spec, rust.spec, package.env.example to start from
 test-build.sh           ./test-build.sh <pkg> [44 45 rawhide]: local build in podman
-copr-setup.sh           ./copr-setup.sh <pkg>: one-time COPR project creation
+copr-setup.sh           ./copr-setup.sh <pkg>: add the package to the COPR project(s)
 .github/workflows/bump.yml   hourly bumps specs to upstream's latest release
 ```
 
@@ -30,17 +30,18 @@ copr-setup.sh           ./copr-setup.sh <pkg>: one-time COPR project creation
   that only push version tags set `TRACK=tags` (newest `TAG_PREFIX<x.y.z>`
   tag; tags with a `-` suffix are skipped). For upstreams with neither,
   leave `UPSTREAM=` empty and bump by hand.
-- Several packages can share one COPR project: each keeps its own
-  `<pkg>/` directory and spec, and members set `COPR_PROJECT=<main pkg>` in
-  `package.env` (example: herdr, herdr-core, herdr-app in `oytal/herdr`).
-  `./copr-setup.sh <main pkg>` sets up all of them.
+- An app split over several upstream repos is several packages, one
+  directory each (herdr, herdr-core, herdr-app); link them with
+  `Requires:`. They all land in `oytal/oytal`.
+- `STANDALONE=yes` only when the owner asks for a separate project.
 - Upstreams with git submodules: GitHub tarballs leave them out. Fetch the
   pinned commit in `%prep` (see `herdr-core/herdr-core.spec`), not with a
   hardcoded commit in the spec.
-- The COPR project description links to upstream: `https://github.com/$UPSTREAM`,
-  or the spec's `URL:` when `UPSTREAM` is empty. In that case write `URL:`
-  without macros so the link resolves. After changing either, the owner
-  runs `./copr-setup.sh <pkg> --update-description`.
+- The COPR project descriptions list each package's `Summary:` and link to
+  upstream: `https://github.com/$UPSTREAM`, or the spec's `URL:` when
+  `UPSTREAM` is empty. In that case write `URL:` without macros so the link
+  resolves. After changing either, the owner runs
+  `./copr-setup.sh --update-description`.
 - Changelog author: `oytal COPR <noreply@localhost>`, date from
   `date '+%a %b %d %Y'`.
 - Plain `%changelog` entries (no `%autochangelog`/`%autorelease`). The bump
@@ -66,18 +67,19 @@ Never change `Version:` to something upstream has not released.
 Read-only COPR commands are always fine for diagnosis:
 
 ```sh
-copr-cli list-builds oytal/<pkg>          # status of recent builds
-copr-cli get-package oytal/<pkg> --name <pkg> --with-latest-build
+copr-cli list-builds oytal/oytal          # status of recent builds
+copr-cli get-package oytal/oytal --name <pkg> --with-latest-build
 copr-cli status <build-id>
 ```
 
 Build logs (chroot e.g. `fedora-44-x86_64`):
-`https://download.copr.fedorainfracloud.org/results/oytal/<pkg>/<chroot>/<build-id>-<pkg>/builder-live.log.gz`
+`https://download.copr.fedorainfracloud.org/results/oytal/oytal/<chroot>/<build-id>-<pkg>/builder-live.log.gz`
+(standalone projects: `oytal/<pkg>` instead of `oytal/oytal`)
 
 ## Environment
 
-Agents run in an Arch distrobox on a Fedora host. `podman`, `gh` and
-`copr-cli` (configured in `~/.config/copr`) all work inside it; rpm tools
+Agents run on the owner's Arch machine. `podman`, `gh` and `copr-cli`
+(configured in `~/.config/copr`) all work there; rpm tools
 (`rpmlint`, `rpmspec`, `rpmdev-bumpspec`) are not installed. Use them
 inside a `registry.fedoraproject.org/fedora:<rel>` container (or just
 `test-build.sh`). Clone upstream sources into a scratch dir outside the repo.
@@ -90,7 +92,8 @@ inside a `registry.fedoraproject.org/fedora:<rel>` container (or just
   those as E: on some releases).
 - Do not commit or push. The owner signs commits and pushes themselves.
 - Do not run `copr-setup.sh` or other `copr-cli` commands that change
-  anything unless the owner asks. They create public projects.
+  anything unless the owner asks. They change public projects.
 - Add the package to the table in `README.md`.
 - Finish by listing the owner's manual steps: commit and push, run
-  `./copr-setup.sh <pkg>`, add the COPR webhook to the GitHub repo.
+  `./copr-setup.sh <pkg>` (a webhook is only needed for a newly created
+  project).

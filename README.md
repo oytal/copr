@@ -1,28 +1,34 @@
 # COPR packaging
 
-RPM packaging for [Fedora COPR](https://copr.fedorainfracloud.org). Each
-directory is one package, and each package has its own COPR project
-`oytal/<package>`, built for Fedora 44, 45 and rawhide (x86_64 + aarch64).
-Related packages can share one project (see "Several packages in one
-project").
+RPM packaging for [Fedora COPR](https://copr.fedorainfracloud.org), built
+for Fedora 44, 45 and rawhide (x86_64 + aarch64). Each directory is one
+package. All of them build in one COPR project, `oytal/oytal`:
 
-| Package | Upstream | Install |
+```sh
+sudo dnf copr enable oytal/oytal
+sudo dnf install <package>
+```
+
+A few packages also have a project of their own (`STANDALONE=yes` in
+`package.env`), for people who want just that app.
+
+| Package | Upstream | Own project |
 |---|---|---|
-| cliamp | [bjarneo/cliamp](https://github.com/bjarneo/cliamp) | `sudo dnf copr enable oytal/cliamp && sudo dnf install cliamp` |
-| kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | `sudo dnf copr enable oytal/kubie && sudo dnf install kubie` |
-| herdr | [herdrdev/herdr](https://github.com/herdrdev/herdr) | `sudo dnf copr enable oytal/herdr && sudo dnf install herdr` |
-| herdr-core (in `oytal/herdr`) | [herdrdev/herdr-core](https://github.com/herdrdev/herdr-core) | `sudo dnf copr enable oytal/herdr && sudo dnf install herdr-core` |
-| herdr-app (in `oytal/herdr`) | [herdrdev/herdr-app](https://github.com/herdrdev/herdr-app) | `sudo dnf copr enable oytal/herdr && sudo dnf install herdr-app` |
+| cliamp | [bjarneo/cliamp](https://github.com/bjarneo/cliamp) | `oytal/cliamp` |
+| herdr | [herdrdev/herdr](https://github.com/herdrdev/herdr) | |
+| herdr-app | [herdrdev/herdr-app](https://github.com/herdrdev/herdr-app) | |
+| herdr-core | [herdrdev/herdr-core](https://github.com/herdrdev/herdr-core) | |
+| kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | |
 
 ## Layout
 
 ```
 <pkg>/<pkg>.spec    the spec file
 <pkg>/package.env   UPSTREAM=<owner/repo> to track, TAG_PREFIX, ENABLE_NET=on|off,
-                    optional TRACK=tags, COPR_PROJECT=<other pkg>
+                    optional TRACK=tags, STANDALONE=yes
 templates/          starter specs (Go, Rust) and package.env.example
 test-build.sh       local build in Fedora containers
-copr-setup.sh       one-time COPR project setup for a package
+copr-setup.sh       adds packages to the COPR projects (safe to re-run)
 AGENTS.md           conventions for coding agents (CLAUDE.md imports it)
 .claude/skills/add-package/SKILL.md   step-by-step "package a new app"
 .github/workflows/bump.yml
@@ -37,8 +43,8 @@ covers research, spec, test builds and the manual steps left for you.
    spec version with the latest stable GitHub release of `UPSTREAM` (or,
    with `TRACK=tags`, its newest `TAG_PREFIX<x.y.z>` tag), bumps
    the spec (new version, release 1, changelog entry) and commits.
-2. The push fires each COPR project's webhook. COPR rebuilds a package only
-   when its subdirectory changed.
+2. The push fires the COPR webhooks (`oytal/oytal` and each standalone
+   project). COPR rebuilds a package only when its subdirectory changed.
 
 ## Adding a package
 
@@ -47,27 +53,22 @@ covers research, spec, test builds and the manual steps left for you.
    spectool.
 2. Test it with `./test-build.sh <pkg> 44 45 rawhide`, then commit and push.
 3. Run `./copr-setup.sh <pkg>` (needs `~/.config/copr` from
-   <https://copr.fedorainfracloud.org/api/>).
-4. In COPR open `oytal/<pkg>` → Settings → Integrations, copy the GitHub
-   webhook URL and add it in this repo under Settings → Webhooks (content
-   type `application/json`, push events only). Every COPR project needs its
-   own webhook here.
+   <https://copr.fedorainfracloud.org/api/>). It adds the package to
+   `oytal/oytal` and starts a build; with `STANDALONE=yes` it also creates
+   `oytal/<pkg>` and builds it there.
+4. Only when step 3 created a project (the first `oytal/oytal` run, or a
+   new standalone project): in COPR open it → Settings → Integrations, copy
+   the GitHub webhook URL and add it in this repo under Settings → Webhooks
+   (content type `application/json`, push events only). Each project needs
+   its own webhook; one covers all packages in it.
 
-### Several packages in one project
+`./copr-setup.sh --all` does the same for every package.
 
-A package whose `package.env` sets `COPR_PROJECT=<pkg>` builds in
-`oytal/<pkg>` instead of a project of its own (herdr-core and herdr-app
-build in `oytal/herdr`). It keeps its own directory, spec and bumps.
-`./copr-setup.sh <pkg>` creates the project and adds and builds every
-member too; `./copr-setup.sh <member>` adds one member to an existing
-project. The project has one webhook, which rebuilds whichever package's
-directory changed.
-
-To refresh an existing project's description (summary, upstream and
-packaging links) after changing the spec or `package.env`:
+To refresh the project descriptions (package list, summaries, upstream and
+packaging links) after changing a spec or `package.env`:
 
 ```sh
-./copr-setup.sh <pkg> --update-description
+./copr-setup.sh --update-description
 ```
 
 ## Fedora releases
@@ -78,13 +79,14 @@ automatically as forks of the rawhide chroots, built packages included. To
 rebuild against the new release anyway:
 
 ```sh
-copr-cli build-package <pkg> --name <pkg>
+copr-cli build-package oytal --name <pkg>
 ```
 
-To drop an EOL release (`--chroot` replaces the whole list):
+To drop an EOL release (`--chroot` replaces the whole list; repeat for each
+standalone project):
 
 ```sh
-copr-cli modify <pkg> \
+copr-cli modify oytal \
   --chroot fedora-45-x86_64 --chroot fedora-45-aarch64 \
   --chroot fedora-46-x86_64 --chroot fedora-46-aarch64 \
   --chroot fedora-rawhide-x86_64 --chroot fedora-rawhide-aarch64
