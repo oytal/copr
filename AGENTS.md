@@ -28,7 +28,10 @@ copr-setup.sh           ./copr-setup.sh <pkg>: add the package to the COPR proje
   `TAG_PREFIX` in `package.env`; change both together.
 - Automatic bumps track GitHub *releases* (not prereleases). For upstreams
   that only push version tags set `TRACK=tags` (newest `TAG_PREFIX<x.y.z>`
-  tag; tags with a `-` suffix are skipped). For upstreams with neither,
+  tag; tags with a `-` suffix are skipped). If every tag is
+  `<x.y.z>-<digits>` (a build timestamp, as in `oc/`), also set
+  `TAG_TS_MACRO=<name>`: the spec keeps the digits in `%global <name>` and the
+  bump workflow rewrites it along with `Version:`. For upstreams with neither,
   leave `UPSTREAM=` empty and bump by hand.
 - An app split over several upstream repos is several packages, one
   directory each (herdr, herdr-core, herdr-app); link them with

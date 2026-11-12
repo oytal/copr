@@ -31,13 +31,26 @@ jobs:
             UPSTREAM=
             TAG_PREFIX=v
             TRACK=releases
+            TAG_TS_MACRO=
+            ts=
             . "./$envfile"
             [ -n "$UPSTREAM" ] || { echo "$pkg: no UPSTREAM, skipping"; continue; }
             if [ "$TRACK" = tags ]; then
               # Upstream tags without GitHub releases: newest TAG_PREFIX<digits.dots> tag
-              latest=$(git ls-remote --tags --refs "https://github.com/$UPSTREAM" \
-                | sed -n "s|.*refs/tags/${TAG_PREFIX}||p" \
-                | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tail -1) || true
+              tags=$(git ls-remote --tags --refs "https://github.com/$UPSTREAM" \
+                | sed -n "s|.*refs/tags/${TAG_PREFIX}||p") || true
+              if [ -n "$TAG_TS_MACRO" ]; then
+                # Tags are <version>-<digits> (e.g. 5.0.0-202610271435): the
+                # digits can't be part of Version, so the spec keeps them in
+                # the %global named TAG_TS_MACRO, which is rewritten below.
+                latest=$(printf '%s\n' "$tags" \
+                  | grep -E '^[0-9]+(\.[0-9]+)*-[0-9]+$' | sort -V | tail -1) || true
+                ts=${latest#*-}
+                latest=${latest%%-*}
+              else
+                latest=$(printf '%s\n' "$tags" \
+                  | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tail -1) || true
+              fi
             else
               latest=$(curl -fsSL ${GH_TOKEN:+-H "Authorization: Bearer $GH_TOKEN"} \
                 "https://api.github.com/repos/$UPSTREAM/releases/latest" | jq -r .tag_name) || true
@@ -51,6 +64,9 @@ jobs:
               rpmdev-bumpspec -n "$latest" \
                 -u "github-actions <github-actions@users.noreply.github.com>" \
                 -c "Update to $latest" "$spec"
+              if [ -n "$TAG_TS_MACRO" ]; then
+                sed -i "s|^\(%global[[:space:]]\+${TAG_TS_MACRO}[[:space:]]\+\).*|\1${ts}|" "$spec"
+              fi
               git commit -am "$pkg: update to $latest"
             fi
           done
