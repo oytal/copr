@@ -93,10 +93,15 @@ inside a `registry.fedoraproject.org/fedora:<rel>` container (or just
   Read `<pkg>/.build/<rel>/rpmlint.txt` and fix real errors. Fine to ignore:
   missing manpages, and `spelling-error` on tool/project names (it reports
   those as E: on some releases).
-- Do not commit or push. The owner signs commits and pushes themselves.
+- Commit your finished work yourself, without asking: one commit per
+  package or fix, message like `Add <pkg>` or `<pkg>: fix <what>`. Never
+  commit `.build/` output. Agent commits are not signed.
+- Ask the owner before every `git push`, and push only after they agree. A
+  push to `main` fires the COPR webhooks and the bump workflow. Never
+  force-push. In a worktree, the owner merges into `main`.
 - Do not run `copr-setup.sh` or other `copr-cli` commands that change
   anything unless the owner asks. They change public projects.
 - Add the package to the table in `README.md`.
-- Finish by listing the owner's manual steps: commit and push, run
-  `./copr-setup.sh <pkg>` (a webhook is only needed for a newly created
-  project).
+- Finish by saying what you committed (branch and hash) and listing the
+  owner's manual steps: approve the push, run `./copr-setup.sh <pkg>` (a
+  webhook is only needed for a newly created project).

@@ -70,9 +70,10 @@ there and nothing unexpected is linked.
 ## 4. Finish
 
 - Add a row to the package table in `README.md`.
-- Do not commit, push, or run `copr-setup.sh`.
+- Commit it: `git add <pkg> README.md && git commit -m "Add <pkg>"`. Do not
+  push without asking the owner, and do not run `copr-setup.sh`.
 - Report the test results and give the owner the manual steps:
-  1. `git add <pkg> README.md && git commit -m "Add <pkg>" && git push`
+  1. Approve the push (or `git push` it themselves)
   2. `./copr-setup.sh <pkg>` (adds it to the public COPR project
      `oytal/oytal` and starts the first build)
   3. Only if the package has `STANDALONE=yes` (a new project `oytal/<pkg>`):
