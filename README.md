@@ -14,6 +14,7 @@ A few packages also have a project of their own (`STANDALONE=yes` in
 
 | Package | Upstream | Own project |
 |---|---|---|
+| bitwarden-desktop | [bitwarden/clients](https://github.com/bitwarden/clients) | |
 | cliamp | [bjarneo/cliamp](https://github.com/bjarneo/cliamp) | `oytal/cliamp` |
 | herdr | [herdrdev/herdr](https://github.com/herdrdev/herdr) | |
 | herdr-app | [herdrdev/herdr-app](https://github.com/herdrdev/herdr-app) | |
