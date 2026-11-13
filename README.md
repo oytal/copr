@@ -15,11 +15,14 @@ A few packages also have a project of their own (`STANDALONE=yes` in
 | Package | Upstream | Own project |
 |---|---|---|
 | bitwarden-desktop | [bitwarden/clients](https://github.com/bitwarden/clients) | |
+| claude | [anthropics/claude-code](https://github.com/anthropics/claude-code) (repackaged official binary, proprietary) | |
+| claude-desktop | [claude.ai/download](https://claude.ai/download) (repackaged official .deb, proprietary; bump by hand) | |
 | cliamp | [bjarneo/cliamp](https://github.com/bjarneo/cliamp) | `oytal/cliamp` |
 | herdr | [herdrdev/herdr](https://github.com/herdrdev/herdr) | |
 | herdr-app | [herdrdev/herdr-app](https://github.com/herdrdev/herdr-app) | |
 | herdr-core | [herdrdev/herdr-core](https://github.com/herdrdev/herdr-core) | |
 | kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | |
+| obsidian | [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases) (repackaged official binary, proprietary) | |
 | oc | [openshift/oc](https://github.com/openshift/oc) | |
 | openlogi | [AprilNEA/OpenLogi](https://github.com/AprilNEA/OpenLogi) | |
 | starship | [starship/starship](https://github.com/starship/starship) | |
