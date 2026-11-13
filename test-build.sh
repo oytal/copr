@@ -38,7 +38,7 @@ for rel in $RELEASES; do
         cp ~/rpmbuild/RPMS/*/*.rpm ~/rpmbuild/SRPMS/*.rpm /out/
         rpmlint /out/*.rpm > /out/rpmlint.txt 2>&1 || true
         echo "--- files"; rpm -qpl /out/*.$(uname -m).rpm
-        echo "--- requires"; rpm -qpR /out/*.$(uname -m).rpm | grep -v "^rpmlib("
+        echo "--- requires"; rpm -qpR /out/*.$(uname -m).rpm | grep -v "^rpmlib(" || true
       ' > "$out/build.log" 2>&1; then
     echo "FAILED on fedora:$rel, last lines of $out/build.log:" >&2
     tail -30 "$out/build.log" >&2
