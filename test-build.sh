@@ -18,7 +18,22 @@ BUILD_ROOT=${BUILD_ROOT:-/var/tmp/copr-test-build}
 jobs_env=()
 [ -n "${CARGO_BUILD_JOBS:-}" ] && jobs_env=(-e CARGO_BUILD_JOBS)
 
+# Downloads (npm, crates, Electron, dnf packages) are cached on the host and
+# reused by later builds and releases. CLEAN_CACHE=1 empties them first.
+CACHE=$BUILD_ROOT/cache
+[ -n "${CLEAN_CACHE:-}" ] && podman unshare rm -rf "$CACHE"
+mkdir -p "$CACHE"/{npm,cargo-registry,cargo-git,xdg}
+
 for rel in $RELEASES; do
+  # Base image with the packaging tools, built once per release (REBUILD_BASE=1
+  # refreshes it) instead of running dnf install on every build.
+  base="localhost/copr-test-base:$rel"
+  if [ -n "${REBUILD_BASE:-}" ] || ! podman image exists "$base"; then
+    echo "==> preparing $base"
+    printf 'FROM registry.fedoraproject.org/fedora:%s\nRUN dnf -y -q install rpm-build rpmdevtools dnf-plugins-core rpmlint >/dev/null 2>&1 && dnf clean all\n' "$rel" \
+      | podman build -q -t "$base" -f - . >/dev/null
+  fi
+  mkdir -p "$CACHE/dnf-$rel"
   out="$PWD/$PKG/.build/$rel"
   work="$BUILD_ROOT/$PKG-$rel"
   rm -rf "$work"
@@ -26,8 +41,11 @@ for rel in $RELEASES; do
   echo "==> $PKG on fedora:$rel (log: $out/build.log)"
   if ! podman run --rm -e PKG="$PKG" "${jobs_env[@]}" \
       -v "$PWD/$PKG:/src:Z,ro" -v "$out:/out:Z" -v "$work:/root/rpmbuild/BUILD:Z" \
-      "registry.fedoraproject.org/fedora:$rel" bash -euc '
-        dnf -y -q install rpm-build rpmdevtools dnf-plugins-core rpmlint >/dev/null 2>&1
+      -v "$CACHE/npm:/root/.npm:z" -v "$CACHE/cargo-registry:/root/.cargo/registry:z" \
+      -v "$CACHE/cargo-git:/root/.cargo/git:z" -v "$CACHE/xdg:/root/.cache:z" \
+      -v "$CACHE/dnf-$rel:/var/cache/libdnf5:z" \
+      "$base" bash -euc '
+        echo keepcache=1 >> /etc/dnf/dnf.conf
         rpmdev-setuptree
         cp -r /src/. ~/rpmbuild/SOURCES/ && rm -rf ~/rpmbuild/SOURCES/.build
         cp /src/$PKG.spec ~/rpmbuild/SPECS/

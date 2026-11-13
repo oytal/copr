@@ -22,6 +22,7 @@ A few packages also have a project of their own (`STANDALONE=yes` in
 | kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | |
 | oc | [openshift/oc](https://github.com/openshift/oc) | |
 | openlogi | [AprilNEA/OpenLogi](https://github.com/AprilNEA/OpenLogi) | |
+| starship | [starship/starship](https://github.com/starship/starship) | |
 
 ## Layout
 

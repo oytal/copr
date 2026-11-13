@@ -7,6 +7,13 @@
 # (libc.musl comes from the musl prebuilds of some npm modules, unused here)
 %global __requires_exclude ^(libffmpeg|libEGL|libGLESv2|libvk_swiftshader|libvulkan|libprocess_isolation|libc\\.musl-[a-z0-9_]+)\\.so.*$
 
+# Architecture names used by upstream's native module file names
+%ifarch aarch64
+%global napi_arch arm64
+%else
+%global napi_arch x64
+%endif
+
 Name:           bitwarden-desktop
 Version:        2026.10.4
 Release:        1%{?dist}
@@ -49,16 +56,27 @@ the SSH agent, biometric unlock and browser integration (native messaging).
 # Dependencies come from the lockfiles, so this needs network access
 npm ci --no-audit --no-fund
 
-# Native Rust modules (napi module, native messaging proxy, process isolation)
+# The webpack bundles (JavaScript only) build while Cargo compiles the native
+# parts, as they do not depend on each other
+(cd apps/desktop && npm run build) > webpack.log 2>&1 &
+webpack_pid=$!
+
+# Native Rust modules. This is what desktop_native/build.js does for Linux,
+# but as one Cargo run, so the crates shared by the three build once and in
+# parallel instead of three times in a row.
 pushd apps/desktop/desktop_native
-node build.js --release
+cargo build --release -p desktop_napi -p desktop_proxy -p process_isolation
+mkdir -p dist
+cp target/release/libdesktop_napi.so napi/desktop_napi.linux-%{napi_arch}-gnu.node
+cp target/release/desktop_proxy dist/desktop_proxy.linux-%{napi_arch}
+cp target/release/libprocess_isolation.so dist/libprocess_isolation.so
 popd
 
-# Webpack bundles, then an unpacked Electron app (no deb/rpm/snap target)
-pushd apps/desktop
-npm run build
-npm run pack:dir
-popd
+wait $webpack_pid || { cat webpack.log; exit 1; }
+cat webpack.log
+
+# An unpacked Electron app (no deb/rpm/snap target)
+(cd apps/desktop && npm run pack:dir)
 
 %install
 appdir=$(echo apps/desktop/dist/linux*-unpacked)
