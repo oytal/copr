@@ -96,16 +96,30 @@ inside a `registry.fedoraproject.org/fedora:<rel>` container (or just
 - Commit your finished work yourself, without asking: one commit per
   package or fix, message like `Add <pkg>` or `<pkg>: fix <what>`. Never
   commit `.build/` output. Agent commits are not signed.
-- Agents may `git push` their branch (autonomous mode, allowed by the
-  owner 2026-11-13) once the full test build passes, without asking. Never
-  force-push, and never push to `main` directly: a push to `main` fires the
-  COPR webhooks and the bump workflow, and the owner merges into `main`
-  (open a draft PR with `gh pr create --draft`).
-- Agents may run `./copr-setup.sh <pkg>` and the `copr-cli` commands that
-  add a package or start/resubmit builds for it (same permission). COPR
-  builds from `main`, so a new package only builds after its PR is merged. Do not
-  delete packages or builds, or change project settings, without asking.
+- Autonomous mode (owner, 2026-11-16): in this repo agents work without
+  asking. After the full test build passes, push the branch, open a PR
+  (`gh pr create`), merge it (`gh pr merge --merge`) and let COPR build.
+  Still never force-push or push straight to `main`: changes reach `main`
+  through a PR. Do not delete packages, builds or COPR projects, or change
+  project settings, unless asked.
+- COPR builds from `main` and every package is registered with
+  `--webhook-rebuild on`, so merging a change rebuilds the packages whose
+  directory changed. Do NOT also start a build by hand for a package that
+  already exists (that builds it twice; the owner then has to cancel one).
+  Run `./copr-setup.sh <pkg>` after the merge only for a NEW package: it
+  registers the package and builds it once. For a rebuild with nothing
+  changed on `main`, use `FORCE_BUILD=1 ./copr-setup.sh <pkg>`.
+- COPR downloads a package's sources once and uses them for every chroot, so
+  never pick a `SourceN:` with `%ifarch`/`%{_arch}` (the other architecture's
+  build then has no file). List every architecture's source and choose in
+  `%prep`. Local test builds only cover x86_64, so check the aarch64 path by
+  reading the spec.
+- Local builds: use the machine freely (all CPUs and memory; `podman`
+  containers are not limited). Do not set `CARGO_BUILD_JOBS` or similar caps
+  unless a build runs out of memory. `test-build.sh` caches downloads and
+  reuses a base image, so repeated builds are fast; build in parallel
+  inside a spec where steps are independent (see `bitwarden-desktop`).
 - Add the package to the table in `README.md`.
 - Finish by saying what you committed (branch and hash), what you pushed
-  or started (PR, COPR build ids), and the owner's remaining manual steps:
-  merge the PR, and for a newly created `STANDALONE` project add the webhook.
+  or started (PR, COPR build ids), and the owner's remaining manual step,
+  if any: for a newly created `STANDALONE` project add the webhook.

@@ -71,15 +71,18 @@ there and nothing unexpected is linked.
 
 - Add a row to the package table in `README.md`.
 - Commit it: `git add <pkg> README.md && git commit -m "Add <pkg>"`.
-- Autonomous mode (allowed by the owner): push the branch and open a draft
-  PR (`gh pr create --draft`). COPR builds from `main` (`copr-setup.sh`
-  uses `--commit main`), so once the PR is merged, run
-  `./copr-setup.sh <pkg>` and watch the first build with `copr-cli status`.
-  Never push to `main` or force-push.
-- Report the test results (and COPR build ids if you got that far), and
-  give the owner the remaining manual steps:
-  1. Merge the PR into `main` (then `./copr-setup.sh <pkg>` if not yet run)
-  2. Only if the package has `STANDALONE=yes` (a new project `oytal/<pkg>`):
+- Autonomous mode (see AGENTS.md): push the branch, open a PR
+  (`gh pr create`) and merge it (`gh pr merge --merge`). COPR builds from
+  `main`, so only after the merge run `./copr-setup.sh <pkg>`: it registers
+  the new package (with a push webhook) and builds it once. Watch it with
+  `copr-cli status`. Never start a second build by hand for a package that
+  is already registered: pushes to `main` rebuild it by themselves. Never
+  force-push or push straight to `main`.
+- Check the spec for `%ifarch`-selected sources: COPR downloads sources once
+  for all chroots, so list every architecture's source and choose in `%prep`.
+- Report the test results and COPR build ids, plus the remaining manual
+  step if any:
+  - Only if the package has `STANDALONE=yes` (a new project `oytal/<pkg>`):
      COPR `oytal/<pkg>` → Settings → Integrations: copy the GitHub webhook
      URL and add it at github.com/oytal/copr → Settings → Webhooks
      (`application/json`, push events only).
