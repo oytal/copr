@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # Puts packages from this repo on COPR. Safe to re-run.
-#   ./copr-setup.sh <pkg>...                  add/update <pkg> in oytal/oytal and build it
+#   ./copr-setup.sh <pkg>...                  add/update <pkg> in oytal/oytal; builds it
+#                                             only when it is new (see below)
 #   ./copr-setup.sh --all                     the same for every package
 #   ./copr-setup.sh --update-description      refresh project descriptions only
+#
+# Packages are registered with --webhook-rebuild on: every push to main
+# rebuilds the packages whose directory changed. So a package that already
+# exists is NOT built here (that would build it twice); only a newly added one
+# is, since no push has happened since it was registered. FORCE_BUILD=1 builds
+# regardless, for a rebuild with no change on main.
 #
 # Every package builds in one shared project, oytal/$MAIN. A package whose
 # package.env sets STANDALONE=yes also gets a project of its own, oytal/<pkg>,
@@ -111,7 +118,11 @@ add_package() {
     --type git \
     --method rpkg \
     --webhook-rebuild on
-  copr-cli build-package "$2" --name "$1" --nowait
+  if [ "$cmd" = add-package-scm ] || [ -n "${FORCE_BUILD:-}" ]; then
+    copr-cli build-package "$2" --name "$1" --nowait
+  else
+    echo "$1: already in $2, the webhook rebuilds it on pushes to main (FORCE_BUILD=1 to build now)"
+  fi
 }
 
 case "${1:-}" in
