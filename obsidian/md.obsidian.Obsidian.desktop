@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Obsidian
+Comment=Knowledge base that works on top of a folder of Markdown files
+Exec=obsidian %U
+Terminal=false
+Type=Application
+Icon=obsidian
+StartupWMClass=obsidian
+MimeType=text/markdown;application/x-obsidian-canvas;application/x-obsidian-base;x-scheme-handler/obsidian;
+Categories=Office;

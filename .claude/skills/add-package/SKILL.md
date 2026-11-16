@@ -70,13 +70,16 @@ there and nothing unexpected is linked.
 ## 4. Finish
 
 - Add a row to the package table in `README.md`.
-- Commit it: `git add <pkg> README.md && git commit -m "Add <pkg>"`. Do not
-  push without asking the owner, and do not run `copr-setup.sh`.
-- Report the test results and give the owner the manual steps:
-  1. Approve the push (or `git push` it themselves)
-  2. `./copr-setup.sh <pkg>` (adds it to the public COPR project
-     `oytal/oytal` and starts the first build)
-  3. Only if the package has `STANDALONE=yes` (a new project `oytal/<pkg>`):
+- Commit it: `git add <pkg> README.md && git commit -m "Add <pkg>"`.
+- Autonomous mode (allowed by the owner): push the branch and open a draft
+  PR (`gh pr create --draft`). COPR builds from `main` (`copr-setup.sh`
+  uses `--commit main`), so once the PR is merged, run
+  `./copr-setup.sh <pkg>` and watch the first build with `copr-cli status`.
+  Never push to `main` or force-push.
+- Report the test results (and COPR build ids if you got that far), and
+  give the owner the remaining manual steps:
+  1. Merge the PR into `main` (then `./copr-setup.sh <pkg>` if not yet run)
+  2. Only if the package has `STANDALONE=yes` (a new project `oytal/<pkg>`):
      COPR `oytal/<pkg>` → Settings → Integrations: copy the GitHub webhook
      URL and add it at github.com/oytal/copr → Settings → Webhooks
      (`application/json`, push events only).

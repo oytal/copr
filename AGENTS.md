@@ -96,12 +96,16 @@ inside a `registry.fedoraproject.org/fedora:<rel>` container (or just
 - Commit your finished work yourself, without asking: one commit per
   package or fix, message like `Add <pkg>` or `<pkg>: fix <what>`. Never
   commit `.build/` output. Agent commits are not signed.
-- Ask the owner before every `git push`, and push only after they agree. A
-  push to `main` fires the COPR webhooks and the bump workflow. Never
-  force-push. In a worktree, the owner merges into `main`.
-- Do not run `copr-setup.sh` or other `copr-cli` commands that change
-  anything unless the owner asks. They change public projects.
+- Agents may `git push` their branch (autonomous mode, allowed by the
+  owner 2026-11-13) once the full test build passes, without asking. Never
+  force-push, and never push to `main` directly: a push to `main` fires the
+  COPR webhooks and the bump workflow, and the owner merges into `main`
+  (open a draft PR with `gh pr create --draft`).
+- Agents may run `./copr-setup.sh <pkg>` and the `copr-cli` commands that
+  add a package or start/resubmit builds for it (same permission). COPR
+  builds from `main`, so a new package only builds after its PR is merged. Do not
+  delete packages or builds, or change project settings, without asking.
 - Add the package to the table in `README.md`.
-- Finish by saying what you committed (branch and hash) and listing the
-  owner's manual steps: approve the push, run `./copr-setup.sh <pkg>` (a
-  webhook is only needed for a newly created project).
+- Finish by saying what you committed (branch and hash), what you pushed
+  or started (PR, COPR build ids), and the owner's remaining manual steps:
+  merge the PR, and for a newly created `STANDALONE` project add the webhook.
