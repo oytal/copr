@@ -12,7 +12,7 @@
 
 Name:           claude-desktop
 Version:        5.11492.2
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop application for Claude.ai
 
 # Proprietary, redistributed as published in Anthropic's apt repository.
@@ -21,11 +21,10 @@ License:        LicenseRef-Anthropic-Proprietary
 URL:            https://claude.ai/download
 # Anthropic publishes the Linux app only as a .deb in its apt repository
 # (no GitHub releases): bump Version by hand, see package.env
-%ifarch aarch64
-Source0:        https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_%{version}_arm64.deb
-%else
+# Both architectures are always sources: COPR downloads the sources once, for
+# all chroots, so a source chosen with %ifarch is missing on the other arch
 Source0:        https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_%{version}_amd64.deb
-%endif
+Source1:        https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_%{version}_arm64.deb
 
 ExclusiveArch:  x86_64 aarch64
 
@@ -54,7 +53,11 @@ apt repository.
 
 %prep
 %setup -q -c -T
+%ifarch aarch64
+ar x %{SOURCE1}
+%else
 ar x %{SOURCE0}
+%endif
 tar xf data.tar.*
 
 %build
@@ -99,5 +102,9 @@ test -f %{buildroot}%{appdir}/resources/app.asar
 %{_datadir}/mime/packages/com.anthropic.Claude.xml
 
 %changelog
+* Mon Nov 16 2026 oytal COPR <noreply@localhost> - 5.11492.2-2
+- List both architectures' packages as sources: COPR downloads sources once
+  for all chroots, so the aarch64 build had no .deb
+
 * Fri Nov 13 2026 oytal COPR <noreply@localhost> - 5.11492.2-1
 - Initial COPR package
