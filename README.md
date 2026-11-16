@@ -14,6 +14,7 @@ A few packages also have a project of their own (`STANDALONE=yes` in
 
 | Package | Upstream | Own project |
 |---|---|---|
+| argocd | [argoproj/argo-cd](https://github.com/argoproj/argo-cd) | |
 | bitwarden-desktop | [bitwarden/clients](https://github.com/bitwarden/clients) | |
 | claude | [anthropics/claude-code](https://github.com/anthropics/claude-code) (repackaged official binary, proprietary) | |
 | claude-desktop | [claude.ai/download](https://claude.ai/download) (repackaged official .deb, proprietary; bump by hand) | |

@@ -4,7 +4,7 @@
 %global goipath github.com/bjarneo/cliamp
 
 Name:           cliamp
-Version:        2.4.0
+Version:        2.4.1
 Release:        1%{?dist}
 Summary:        Retro terminal music player inspired by Winamp 2.x
 
@@ -73,5 +73,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 %{_datadir}/icons/hicolor/512x512/apps/%{name}.png
 
 %changelog
+* Thu Nov 12 2026 github-actions <github-actions@users.noreply.github.com> - 2.4.1-1
+- Update to 2.4.1
+
 * Tue Nov 10 2026 cliamp COPR <noreply@localhost> - 2.4.0-1
 - Initial COPR package

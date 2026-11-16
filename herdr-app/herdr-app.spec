@@ -4,7 +4,7 @@
 %global debug_package %{nil}
 
 Name:           herdr-app
-Version:        0.1.15
+Version:        0.1.16
 Release:        1%{?dist}
 Summary:        Herdr desktop app: terminals and coding agents that keep running
 
@@ -97,5 +97,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 %{_datadir}/icons/hicolor/scalable/apps/%{name}.svg
 
 %changelog
+* Sun Nov 15 2026 github-actions <github-actions@users.noreply.github.com> - 0.1.16-1
+- Update to 0.1.16
+
 * Wed Nov 11 2026 oytal COPR <noreply@localhost> - 0.1.15-1
 - Initial COPR package
