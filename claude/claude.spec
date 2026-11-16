@@ -5,8 +5,8 @@
 %global __brp_mangle_shebangs %{nil}
 
 Name:           claude
-Version:        2.1.323
-Release:        2%{?dist}
+Version:        2.1.325
+Release:        1%{?dist}
 Summary:        Claude Code, Anthropic's agentic coding tool for the terminal
 
 # Proprietary, redistributed as published on the project's GitHub releases.
@@ -54,6 +54,9 @@ install -Dpm 0755 claude %{buildroot}%{_bindir}/claude
 %{_bindir}/claude
 
 %changelog
+* Mon Nov 16 2026 github-actions <github-actions@users.noreply.github.com> - 2.1.325-1
+- Update to 2.1.325
+
 * Mon Nov 16 2026 oytal COPR <noreply@localhost> - 2.1.323-2
 - List both architectures' tarballs as sources: COPR downloads sources once
   for all chroots, so the aarch64 build had no tarball
