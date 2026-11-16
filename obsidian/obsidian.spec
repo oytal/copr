@@ -9,7 +9,7 @@
 
 Name:           obsidian
 Version:        1.15.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Knowledge base that works on top of a folder of Markdown files
 
 # Obsidian is proprietary, free for personal and commercial use. The license
@@ -17,13 +17,12 @@ Summary:        Knowledge base that works on top of a folder of Markdown files
 License:        LicenseRef-Proprietary
 URL:            https://obsidian.md
 # The "v" is TAG_PREFIX from package.env; change both together
-%ifarch aarch64
-Source0:        https://github.com/obsidianmd/obsidian-releases/releases/download/v%{version}/obsidian-%{version}-arm64.tar.gz
-%else
+# Both architectures are always sources: COPR downloads the sources once, for
+# all chroots, so a source chosen with %ifarch is missing on the other arch
 Source0:        https://github.com/obsidianmd/obsidian-releases/releases/download/v%{version}/obsidian-%{version}.tar.gz
-%endif
-Source1:        md.obsidian.Obsidian.desktop
-Source2:        obsidian.xml
+Source1:        https://github.com/obsidianmd/obsidian-releases/releases/download/v%{version}/obsidian-%{version}-arm64.tar.gz
+Source2:        md.obsidian.Obsidian.desktop
+Source3:        obsidian.xml
 
 ExclusiveArch:  x86_64 aarch64
 
@@ -42,7 +41,13 @@ a graph view, canvases, community plugins and themes.
 This package repackages the official Linux release of Obsidian.
 
 %prep
-%setup -q -n obsidian-%{version}
+# The top directory is obsidian-<version> or obsidian-<version>-arm64
+%setup -q -c -T
+%ifarch aarch64
+tar xzf %{SOURCE1} --strip-components=1
+%else
+tar xzf %{SOURCE0} --strip-components=1
+%endif
 
 %build
 # Nothing to build: the release is a prebuilt Electron application
@@ -53,8 +58,8 @@ cp -a . %{buildroot}%{_libdir}/obsidian/
 install -d %{buildroot}%{_bindir}
 ln -s %{_libdir}/obsidian/obsidian %{buildroot}%{_bindir}/obsidian
 
-install -Dpm 0644 %{SOURCE1} %{buildroot}%{_datadir}/applications/md.obsidian.Obsidian.desktop
-install -Dpm 0644 %{SOURCE2} %{buildroot}%{_datadir}/mime/packages/obsidian.xml
+install -Dpm 0644 %{SOURCE2} %{buildroot}%{_datadir}/applications/md.obsidian.Obsidian.desktop
+install -Dpm 0644 %{SOURCE3} %{buildroot}%{_datadir}/mime/packages/obsidian.xml
 install -Dpm 0644 resources/icon.png %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/obsidian.png
 
 %check
@@ -71,5 +76,9 @@ test -f %{buildroot}%{_libdir}/obsidian/resources/app.asar
 %{_datadir}/icons/hicolor/512x512/apps/obsidian.png
 
 %changelog
+* Mon Nov 16 2026 oytal COPR <noreply@localhost> - 1.15.1-2
+- List both architectures' tarballs as sources: COPR downloads sources once
+  for all chroots, so the aarch64 build had no tarball
+
 * Fri Nov 13 2026 oytal COPR <noreply@localhost> - 1.15.1-1
 - Initial COPR package
