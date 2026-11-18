@@ -23,6 +23,7 @@ A few packages also have a project of their own (`STANDALONE=yes` in
 | herdr-app | [herdrdev/herdr-app](https://github.com/herdrdev/herdr-app) | |
 | herdr-core | [herdrdev/herdr-core](https://github.com/herdrdev/herdr-core) | |
 | kubie | [kubie-org/kubie](https://github.com/kubie-org/kubie) | |
+| logcli | [grafana/loki](https://github.com/grafana/loki) (only the logcli command) | |
 | obsidian | [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases) (repackaged official binary, proprietary) | |
 | oc | [openshift/oc](https://github.com/openshift/oc) | |
 | openlogi | [AprilNEA/OpenLogi](https://github.com/AprilNEA/OpenLogi) | |
