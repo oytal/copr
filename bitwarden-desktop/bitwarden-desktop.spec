@@ -15,7 +15,7 @@
 %endif
 
 Name:           bitwarden-desktop
-Version:        2026.10.4
+Version:        2026.11.0
 Release:        1%{?dist}
 Summary:        Desktop client for the Bitwarden password manager
 
@@ -113,5 +113,8 @@ test -f %{buildroot}%{_libdir}/bitwarden/desktop_proxy
 %{_datadir}/polkit-1/actions/com.bitwarden.desktop.policy
 
 %changelog
+* Fri Nov 20 2026 github-actions <github-actions@users.noreply.github.com> - 2026.11.0-1
+- Update to 2026.11.0
+
 * Fri Nov 13 2026 oytal COPR <noreply@localhost> - 2026.10.4-1
 - Initial COPR package
