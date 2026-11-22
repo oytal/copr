@@ -4,7 +4,7 @@
 %global debug_package %{nil}
 
 Name:           herdr-core
-Version:        0.1.21
+Version:        0.1.22
 Release:        1%{?dist}
 Summary:        Terminals for coding agents (hc), the core of the Herdr app
 
@@ -65,6 +65,9 @@ ln -s %{name} %{buildroot}%{_bindir}/hc
 %{_bindir}/hc
 
 %changelog
+* Sun Nov 22 2026 github-actions <github-actions@users.noreply.github.com> - 0.1.22-1
+- Update to 0.1.22
+
 * Thu Nov 12 2026 github-actions <github-actions@users.noreply.github.com> - 0.1.21-1
 - Update to 0.1.21
 
