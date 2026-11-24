@@ -5,7 +5,7 @@
 %global __brp_mangle_shebangs %{nil}
 
 Name:           claude
-Version:        2.1.330
+Version:        2.1.331
 Release:        1%{?dist}
 Summary:        Claude Code, Anthropic's agentic coding tool for the terminal
 
@@ -54,6 +54,9 @@ install -Dpm 0755 claude %{buildroot}%{_bindir}/claude
 %{_bindir}/claude
 
 %changelog
+* Tue Nov 24 2026 github-actions <github-actions@users.noreply.github.com> - 2.1.331-1
+- Update to 2.1.331
+
 * Sat Nov 21 2026 github-actions <github-actions@users.noreply.github.com> - 2.1.330-1
 - Update to 2.1.330
 
