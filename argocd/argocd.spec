@@ -6,7 +6,7 @@
 %global verpkg     github.com/argoproj/argo-cd/v3/common
 
 Name:           argocd
-Version:        3.6.2
+Version:        3.6.3
 Release:        1%{?dist}
 Summary:        Declarative GitOps for Kubernetes, CLI client
 
@@ -56,6 +56,9 @@ install -Dpm 0755 %{name} %{buildroot}%{_bindir}/%{name}
 %{_bindir}/%{name}
 
 %changelog
+* Tue Nov 24 2026 github-actions <github-actions@users.noreply.github.com> - 3.6.3-1
+- Update to 3.6.3
+
 * Wed Nov 18 2026 github-actions <github-actions@users.noreply.github.com> - 3.6.2-1
 - Update to 3.6.2
 
