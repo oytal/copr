@@ -3,7 +3,7 @@
 %global debug_package %{nil}
 
 Name:           logcli
-Version:        3.7.10
+Version:        3.7.11
 Release:        1%{?dist}
 Summary:        Command-line client for Grafana Loki
 
@@ -53,5 +53,8 @@ install -d %{buildroot}%{bash_completions_dir} %{buildroot}%{zsh_completions_dir
 %{zsh_completions_dir}/_%{name}
 
 %changelog
+* Fri Nov 27 2026 github-actions <github-actions@users.noreply.github.com> - 3.7.11-1
+- Update to 3.7.11
+
 * Wed Nov 18 2026 oytal COPR <noreply@localhost> - 3.7.10-1
 - Initial COPR package
